@@ -1,25 +1,39 @@
-﻿using System;
+﻿using NativeWifi;
+/* 引用NativeWifi包
+ * 用途:收集WiFi列表,实现中文ssid无线网络的搜索与连接*/
 using SimpleWifi;
-using NativeWifi;
-using System.Text;
-using System.Collections.Generic;
-using System.Threading;
-using System.Diagnostics;
+/* 引用SimpleWifi包
+ * 用途:收集WiFi列表,查询WiFi详细信息
+ * 已知问题:无法显示中文ssid网络以及其详细信息
+ */
+using System;//C#系统标准库
+using System.Collections.Generic;//List<>类型所需库
+using System.Text;//文本处理库
+using System.Threading;//多线程标准库
 
 namespace EasyConnect
 {
-    class wifiSo
+    /// <summary>
+    /// Wifi连接标准类
+    /// </summary>
+    class WifiSo
     {
-        public WIFISSID ssid;               //wifi ssid
-        public string key;                 //wifi密码
-        public List<WIFISSID> ssids = new List<WIFISSID>();
-
-        public wifiSo()
+        public WIFISSID ssid;               //WIFISSID类
+        public string key;                 //WiFi密码
+        public List<WIFISSID> ssids = new List<WIFISSID>();//WiFi列表
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        public WifiSo()
         {
-            ssids.Clear();
+            ssids.Clear();//清除列表中的ssid
         }
-
-        public wifiSo(WIFISSID ssid, string key)
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="ssid">无线网络SSID类</param>
+        /// <param name="key">无线网络密码</param>
+        public WifiSo(WIFISSID ssid, string key)
         {
             ssids.Clear();
             this.ssid = ssid;
@@ -27,6 +41,10 @@ namespace EasyConnect
         }
 
         //寻找当前连接的网络：
+        /// <summary>
+        /// 获取当前网络
+        /// </summary>
+        /// <returns>配置文件名称</returns>
         public static string GetCurrentConnection()
         {
             WlanClient client = new WlanClient();
@@ -44,6 +62,11 @@ namespace EasyConnect
 
             return string.Empty;
         }
+        /// <summary>
+        /// 获取ssid字符串
+        /// </summary>
+        /// <param name="ssid">ssid</param>
+        /// <returns>ssid列表</returns>
         static string GetStringForSSID(Wlan.Dot11Ssid ssid)
         {
             return Encoding.UTF8.GetString(ssid.SSID, 0, (int)ssid.SSIDLength);
@@ -75,6 +98,11 @@ namespace EasyConnect
         }
 
         // 字符串转Hex
+        /// <summary>
+        /// 字符串转Hex
+        /// </summary>
+        /// <param name="str">待处理字符串</param>
+        /// <returns>字符串Hex</returns>
         public static string StringToHex(string str)
         {
             StringBuilder sb = new StringBuilder();
@@ -89,6 +117,9 @@ namespace EasyConnect
         }
 
         // 连接到无线网络
+        /// <summary>
+        /// 连接无线网络
+        /// </summary>
         public void ConnectToSSID()
         {
             try
@@ -187,6 +218,11 @@ namespace EasyConnect
             }
         }
         //当连接的连接状态进行通知 面是简单的通知事件的实现，根据通知的内容在界面上显示提示信息：
+        /// <summary>
+        /// 消息反馈
+        /// </summary>
+        /// <param name="notifyData">-</param>
+        /// <param name="connNotifyData">-</param>
         private void WlanInterface_WlanConnectionNotification(Wlan.WlanNotificationData notifyData, Wlan.WlanConnectionNotificationData connNotifyData)
         {
             try
@@ -220,143 +256,54 @@ namespace EasyConnect
             }
         }
     }
-    class MyWifi
-    {
-        public List<WIFISSID> ssids = new List<WIFISSID>();
-
-        public MyWifi()
-        {
-            ssids.Clear();
-        }
-
-
-        static string GetStringForSSID(Wlan.Dot11Ssid ssid)
-        {
-            return Encoding.UTF8.GetString(ssid.SSID, 0, (int)ssid.SSIDLength);
-        }
-
-        /// <summary>
-        /// 枚举所有无线设备接收到的SSID
-        /// </summary>
-        public List<WIFISSID> ScanSSID()
-        {
-            WlanClient client = new WlanClient();
-            foreach (WlanClient.WlanInterface wlanIface in client.Interfaces)
-            {
-                // Lists all networks with WEP security
-                Wlan.WlanAvailableNetwork[] networks = wlanIface.GetAvailableNetworkList(0);
-                foreach (Wlan.WlanAvailableNetwork network in networks)
-                {
-                    WIFISSID targetSSID = new WIFISSID();
-
-                    targetSSID.wlanInterface = wlanIface;
-                    targetSSID.wlanSignalQuality = (int)network.wlanSignalQuality;
-                    targetSSID.SSID = GetStringForSSID(network.dot11Ssid);
-                    //targetSSID.SSID = Encoding.Default.GetString(network.dot11Ssid.SSID, 0, (int)network.dot11Ssid.SSIDLength);
-                    targetSSID.dot11DefaultAuthAlgorithm = network.dot11DefaultAuthAlgorithm.ToString();
-                    targetSSID.dot11DefaultCipherAlgorithm = network.dot11DefaultCipherAlgorithm.ToString();
-                    ssids.Add(targetSSID);
-
-
-                    //if ( network.dot11DefaultCipherAlgorithm == Wlan.Dot11CipherAlgorithm.WEP )
-                    //{
-                    //    Console.WriteLine( "Found WEP network with SSID {0}.", GetStringForSSID(network.dot11Ssid));
-                    //}
-                    //Console.WriteLine("Found network with SSID {0}.", GetStringForSSID(network.dot11Ssid));
-                    //Console.WriteLine("dot11BssType:{0}.", network.dot11BssType.ToString());
-                    //Console.WriteLine("dot11DefaultAuthAlgorithm:{0}.", network.dot11DefaultAuthAlgorithm.ToString());
-                    //Console.WriteLine("dot11DefaultCipherAlgorithm:{0}.", network.dot11DefaultCipherAlgorithm.ToString());
-                    //Console.WriteLine("dot11Ssid:{0}.", network.dot11Ssid.ToString());
-
-                    //Console.WriteLine("flags:{0}.", network.flags.ToString());
-                    //Console.WriteLine("morePhyTypes:{0}.", network.morePhyTypes.ToString());
-                    //Console.WriteLine("networkConnectable:{0}.", network.networkConnectable.ToString());
-                    //Console.WriteLine("numberOfBssids:{0}.", network.numberOfBssids.ToString());
-                    //Console.WriteLine("profileName:{0}.", network.profileName.ToString());
-                    //Console.WriteLine("wlanNotConnectableReason:{0}.", network.wlanNotConnectableReason.ToString());
-                    //Console.WriteLine("wlanSignalQuality:{0}.", network.wlanSignalQuality.ToString());
-                    //Console.WriteLine("-----------------------------------");
-                    // Console.WriteLine(network.ToString());
-                }
-                
-            }
-            return ssids;
-        } // EnumSSID
-
-
-        /// <summary>
-        /// 连接到未加密的SSID
-        /// </summary>
-        /// <param name="ssid"></param>
-        public void ConnectToSSID(WIFISSID ssid)
-        {
-            // Connects to a known network with WEP security
-            string profileName = ssid.SSID; // this is also the SSID
-
-            string mac = StringToHex(profileName); // 
-
-            //string key = "";
-            //string profileXml = string.Format("<?xml version=\"1.0\"?><WLANProfile xmlns=\"http://www.microsoft.com/networking/WLAN/profile/v1\"><name>{0}</name><SSIDConfig><SSID><hex>{1}</hex><name>New{0}</name></SSID></SSIDConfig><connectionType>ESS</connectionType><MSM><security><authEncryption><authentication>open</authentication><encryption>none</encryption><useOneX>false</useOneX></authEncryption><sharedKey><keyType>networkKey</keyType><protected>false</protected><keyMaterial>{2}</keyMaterial></sharedKey><keyIndex>0</keyIndex></security></MSM></WLANProfile>", profileName, mac, key);
-            //string profileXml2 = "<?xml version=\"1.0\"?><WLANProfile xmlns=\"http://www.microsoft.com/networking/WLAN/profile/v1\"><name>Hacker SSID</name><SSIDConfig><SSID><hex>54502D4C494E4B5F506F636B657441505F433844323632</hex><name>TP-LINK_PocketAP_C8D262</name></SSID>        </SSIDConfig>        <connectionType>ESS</connectionType><connectionMode>manual</connectionMode><MSM> <security><authEncryption><authentication>open</authentication><encryption>none</encryption><useOneX>false</useOneX></authEncryption></security></MSM></WLANProfile>";
-            //wlanIface.SetProfile( Wlan.WlanProfileFlags.AllUser, profileXml2, true );
-            //wlanIface.Connect( Wlan.WlanConnectionMode.Profile, Wlan.Dot11BssType.Any, profileName );
-            string myProfileXML = string.Format("<?xml version=\"1.0\"?><WLANProfile xmlns=\"http://www.microsoft.com/networking/WLAN/profile/v1\"><name>{0}</name><SSIDConfig><SSID><hex>{1}</hex><name>{0}</name></SSID></SSIDConfig><connectionType>ESS</connectionType><connectionMode>manual</connectionMode><MSM><security><authEncryption><authentication>open</authentication><encryption>none</encryption><useOneX>false</useOneX></authEncryption></security></MSM></WLANProfile>", profileName, mac);
-            
-            ssid.wlanInterface.SetProfile(Wlan.WlanProfileFlags.AllUser, myProfileXML, true);
-            ssid.wlanInterface.Connect(Wlan.WlanConnectionMode.Profile, Wlan.Dot11BssType.Any, profileName);
-            //Console.ReadKey();
-        }
-
-        /// <summary>
-        /// 字符串转Hex
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        public static string StringToHex(string str)
-        {
-            StringBuilder sb = new StringBuilder();
-            byte[] byStr = System.Text.Encoding.Default.GetBytes(str); //默认是System.Text.Encoding.Default.GetBytes(str)
-            for (int i = 0; i < byStr.Length; i++)
-            {
-                sb.Append(Convert.ToString(byStr[i], 16));
-            }
-
-            return (sb.ToString().ToUpper());
-        }
-    }
-
-    class WIFISSID
-    {
-        public string SSID = "NONE";
-        public string dot11DefaultAuthAlgorithm = "";
-        public string dot11DefaultCipherAlgorithm = "";
-        public bool networkConnectable = true;
-        public string wlanNotConnectableReason = "";
-        public int wlanSignalQuality = 0;
-        public WlanClient.WlanInterface wlanInterface = null;
-    }
-
+    
+    /// <summary>
+    /// 程序主模块
+    /// </summary>
     class Program
     {
+        /// <summary>
+        /// 版本号
+        /// </summary>
         const string Version = "EasyConnect v.1.2.1.0";
+        /// <summary>
+        /// 更新日志
+        /// </summary>
         const string Comment = "1.2.0.1:\n-更新了帮助功能\n-增加了显示无线网络列表的功能\n-增加了查看WiFi信息的功能\n-增加了查看网络配置文件的功能\n-增加了查看软件版本的功能\n\n1.2.1.0:\n-现在允许使用-S命令查看中文SSID的WiFi.";
+        /// <summary>
+        /// 关于
+        /// </summary>
         const string About = "Powered by .NET Core 3.1\n使用的Nuget包:NativeWifi,SimpleWifi\n相互科技出品 相互科技保留产品最终解释权\n本项目使用MIT开源协议在GitHub开源.";
+        /// <summary>
+        /// 未知操作提示
+        /// </summary>
         const string UnreachableText = "不支持的操作.\n使用--Help或-H获取帮助";
+        /// <summary>
+        /// 帮助文本
+        /// </summary>
         const string HelpText = "使用--Connect或-C <SSID> (密码)连接WiFi\n使用--ShowList或-S显示WiFi列表\n使用--Help或-H获取帮助\n使用--Info或-I查看所有无线网络信息\n使用--Info或-I <SSID>查看个别网络信息\n使用--Dictionary或-D查看所有存储的无线网络(仅Windows)\n使用--Dictionary或-D <SSID>查看个别无线网络配置文件(仅Windows)\n使用--Config或-C查看网络适配器信息\n使用--Version或-V查看软件版本";
+        
+        /// <summary>
+        /// 启动方法
+        /// </summary>
+        /// <param name="args">参数</param>
         static void Main(string[] args)
         {
-            int ArgLength = args.Length;
+            
+            int ArgLength = args.Length;//计数参数数量
             switch (ArgLength)
             {
                 case 0:
+                    //此时具有0个参数
                     Console.WriteLine(HelpText);
                     break;
                 case 1:
-                    switch (args[0])
+                    //此时具有1个参数
+                    switch (args[0])//识别第一个参数
                     {
                         case "--ShowList":
                         case "-S":
-                            wifiSo WifiSo = new wifiSo();
+                            WifiSo WifiSo = new WifiSo();//构建新的WifiSo类
                             var WifiList = WifiSo.ScanSSID();
                             foreach (var i in WifiList)
                             {
@@ -369,7 +316,7 @@ namespace EasyConnect
                             break;
                         case "--Info":
                         case "-I":
-                            wifiSo WifiSO = new wifiSo();
+                            WifiSo WifiSO = new WifiSo();//构建新的WifiSo类
                             var WifiLIST = WifiSO.ScanSSID();
                             foreach (var i in WifiLIST)
                             {
@@ -380,13 +327,13 @@ namespace EasyConnect
                             var arr = WirelessList.GetAccessPoints();
                             foreach (var i in arr)
                             {
-                                Console.WriteLine("\n\nSSID:" + i.Name + "\n信号强度:" + i.SignalStrength+"\n已连接:"+i.IsConnected+"\n已存储配置文件:"+i.HasProfile+"\n具有密码:"+i.IsSecure);
+                                Console.WriteLine("\n\nSSID:" + i.Name + "\n信号强度:" + i.SignalStrength + "\n已连接:" + i.IsConnected + "\n已存储配置文件:" + i.HasProfile + "\n具有密码:" + i.IsSecure);
                             }
                             break;
                         case "--Version":
                         case "-V":
                             Console.WriteLine(Version);
-                            Console.WriteLine("更新日志:"+Comment);
+                            Console.WriteLine("更新日志:" + Comment);
                             Console.WriteLine(About);
                             break;
                         case "--Dictionary":
@@ -414,7 +361,7 @@ namespace EasyConnect
                             break;
                         case "--Info":
                         case "-I":
-                            wifiSo WifiSO = new wifiSo();
+                            WifiSo WifiSO = new WifiSo();
                             var WifiLIST = WifiSO.ScanSSID();
                             foreach (var i in WifiLIST)
                             {
@@ -426,7 +373,7 @@ namespace EasyConnect
                             foreach (var i in arr)
                             {
                                 string WifiSSID = args[1];
-                                if(i.Name==WifiSSID)
+                                if (i.Name == WifiSSID)
                                 {
                                     Console.WriteLine("\n\nSSID:" + i.Name + "\n信号强度:" + i.SignalStrength + "\n已连接:" + i.IsConnected + "\n已存储配置文件:" + i.HasProfile + "\n具有密码:" + i.IsSecure);
                                 }
@@ -436,7 +383,7 @@ namespace EasyConnect
                         case "--Dictionary":
                         case "-D":
                             string DataSSID = args[1];
-                            string Data = UseCmd("netsh wlan show profiles name="+DataSSID);
+                            string Data = UseCmd("netsh wlan show profiles name=" + DataSSID);
                             Console.WriteLine(Data);
                             break;
                         default:
@@ -451,7 +398,7 @@ namespace EasyConnect
                         case "-C":
                             string SSID = args[1];
                             string Password = args[2];
-                            Connect(SSID,Password);
+                            Connect(SSID, Password);
                             break;
                         default:
                             Console.WriteLine(UnreachableText);
@@ -521,7 +468,7 @@ namespace EasyConnect
                     targetSSID.dot11DefaultCipherAlgorithm = network.dot11DefaultCipherAlgorithm.ToString();
                     if (GetStringForSSID(network.dot11Ssid).Equals(SSID))
                     {
-                        var obj = new wifiSo(targetSSID, "");
+                        var obj = new WifiSo(targetSSID, "");
                         Thread wificonnect = new Thread(obj.ConnectToSSID);
                         wificonnect.Start();
                         Console.WriteLine("开始连接...");
@@ -549,7 +496,7 @@ namespace EasyConnect
                     targetSSID.dot11DefaultCipherAlgorithm = network.dot11DefaultCipherAlgorithm.ToString();
                     if (GetStringForSSID(network.dot11Ssid).Equals(SSID))
                     {
-                        var obj = new wifiSo(targetSSID, Password);
+                        var obj = new WifiSo(targetSSID, Password);
                         Thread wificonnect = new Thread(obj.ConnectToSSID);
                         wificonnect.Start();
                         Console.WriteLine("开始连接...");
